@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Athena — Master What You Learn</title>
+  <meta name="description" content="AI-powered mastery learning through recall, application, and diagnostic feedback." />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- SCREEN: HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="home-bg">
+      <div class="marble-overlay"></div>
+      <div class="constellation" id="constellation"></div>
+    </div>
+
+    <header class="home-header">
+      <div class="athena-logo">
+        <svg class="owl-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="14" cy="18" r="6" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="26" cy="18" r="6" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="2.5" fill="#c9a84c"/>
+          <circle cx="26" cy="18" r="2.5" fill="#c9a84c"/>
+          <path d="M17 24 Q20 27 23 24" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <path d="M8 14 Q10 8 14 10" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <path d="M32 14 Q30 8 26 10" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <path d="M14 28 Q17 34 20 33 Q23 34 26 28" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-text">ATHENA</span>
+      </div>
+    </header>
+
+    <main class="home-main">
+      <div class="hero">
+        <p class="hero-pre">The temple of mastery</p>
+        <h1 class="hero-title">
+          Don't just read.<br />
+          <em>Understand.</em>
+        </h1>
+        <p class="hero-sub">
+          Learning is repeated recall — not repeated exposure.<br />
+          Choose your path below.
+        </p>
+      </div>
+
+      <div class="mode-cards">
+        <div class="mode-card" id="card-pdf" onclick="enterMode('pdf')">
+          <div class="card-glyph">𝛙</div>
+          <div class="card-body">
+            <h2>Knowledge Mode</h2>
+            <p>Upload your notes or study material. Athena reads them, then tests you — adaptively — until you've mastered the content.</p>
+            <ul class="card-features">
+              <li>PDF & text ingestion</li>
+              <li>Adaptive difficulty questioning</li>
+              <li>Web-augmented concept expansion</li>
+              <li>Diagnostic weak-area feedback</li>
+            </ul>
+          </div>
+          <div class="card-cta">Begin →</div>
+        </div>
+
+        <div class="mode-card" id="card-coding" onclick="enterMode('coding')">
+          <div class="card-glyph">⌥</div>
+          <div class="card-body">
+            <h2>Coding Mode</h2>
+            <p>Tell Athena what you've been learning. She'll map the curriculum, assign you a real project, and evaluate your code with surgical precision.</p>
+            <ul class="card-features">
+              <li>AI curriculum checklist</li>
+              <li>Application-level project generation</li>
+              <li>Live code editor + preview</li>
+              <li>Rubric-based grading (0–10)</li>
+            </ul>
+          </div>
+          <div class="card-cta">Begin →</div>
+        </div>
+      </div>
+
+      <p class="home-footer-note">
+        Your API key stays in your browser. Nothing is stored on any server.
+      </p>
+    </main>
+  </div>
+
+  <!-- SCREEN: API KEY GATE -->
+  <div id="screen-apikey" class="screen">
+    <div class="gate-container">
+      <button class="back-btn" onclick="goHome()">← Back</button>
+      <div class="gate-icon">🔑</div>
+      <h2 class="gate-title">Your Gemini API Key</h2>
+      <p class="gate-sub">Athena uses Google Gemini. Your key is stored only in this browser session — never sent to any third-party server.</p>
+      <div class="input-field">
+        <input type="password" id="apikey-input" placeholder="AIza..." autocomplete="off" />
+        <button class="reveal-btn" onclick="toggleKeyVisibility()">show</button>
+      </div>
+      <p class="gate-hint">Get a free key at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a></p>
+      <button class="primary-btn" onclick="saveApiKey()">Continue</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: PDF MODE -->
+  <div id="screen-pdf" class="screen">
+    <div class="mode-header">
+      <button class="back-btn" onclick="goHome()">← Home</button>
+      <div class="mode-title-row">
+        <span class="mode-badge">Knowledge Mode</span>
+        <div class="session-score" id="pdf-score-display" style="display:none">
+          Score: <span id="pdf-score">0</span> / <span id="pdf-total">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="pdf-step-upload" class="pdf-step active">
+      <div class="step-container">
+        <h2 class="step-title">Upload Your Material</h2>
+        <p class="step-sub">Upload a PDF or paste your notes. Athena will extract the concepts and build your test.</p>
+
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">📄</div>
+          <p>Drop a PDF here or <span class="upload-link" onclick="document.getElementById('pdf-file-input').click()">browse</span></p>
+          <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display:none" onchange="handleFileUpload(event)" />
+        </div>
+
+        <div class="divider-or"><span>or</span></div>
+
+        <textarea id="notes-input" class="notes-textarea" placeholder="Paste your notes or text here..."></textarea>
+
+        <div class="question-count-row">
+          <label>How many questions?</label>
+          <div class="count-selector">
+            <button onclick="adjustCount(-5)">−</button>
+            <span id="q-count">10</span>
+            <button onclick="adjustCount(5)">+</button>
+          </div>
+        </div>
+
+        <button class="primary-btn" id="generate-btn" onclick="startPdfSession()">
+          <span class="btn-text">Generate Questions</span>
+          <span class="btn-loader" style="display:none">Athena is reading...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Quiz -->
+    <div id="pdf-step-quiz" class="pdf-step">
+      <div class="quiz-container">
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+        </div>
+        <div class="quiz-meta">
+          <span id="quiz-q-num">Question 1</span>
+          <span class="difficulty-badge" id="difficulty-badge">Medium</span>
+        </div>
+
+        <div class="question-card" id="question-card">
+          <p class="question-text" id="question-text"></p>
+          <div id="mcq-options" class="mcq-options" style="display:none"></div>
+          <textarea id="open-answer" class="answer-textarea" placeholder="Write your answer here..."></textarea>
+        </div>
+
+        <button class="primary-btn" onclick="submitAnswer()">Submit Answer</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Feedback per question -->
+    <div id="pdf-step-feedback" class="pdf-step">
+      <div class="feedback-container">
+        <div class="feedback-verdict" id="feedback-verdict"></div>
+        <div class="feedback-body" id="feedback-body"></div>
+        <button class="primary-btn" onclick="nextQuestion()">Next Question →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Final Report -->
+    <div id="pdf-step-report" class="pdf-step">
+      <div class="report-container">
+        <h2 class="report-title">Session Complete</h2>
+        <div class="score-ring-container">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" class="ring-bg"/>
+            <circle cx="60" cy="60" r="50" class="ring-fill" id="ring-fill"/>
+          </svg>
+          <div class="score-ring-label">
+            <span id="final-score-num">0</span>
+            <span class="score-denom">/10</span>
+          </div>
+        </div>
+        <div class="report-sections">
+          <div class="report-section strong">
+            <h3>✓ Strong Areas</h3>
+            <ul id="report-strong"></ul>
+          </div>
+          <div class="report-section weak">
+            <h3>⚠ Needs Work</h3>
+            <ul id="report-weak"></ul>
+          </div>
+          <div class="report-section revisit">
+            <h3>📖 Revisit These</h3>
+            <ul id="report-revisit"></ul>
+          </div>
+        </div>
+        <div class="report-actions">
+          <button class="primary-btn" onclick="retestWeakAreas()">Retest Weak Areas</button>
+          <button class="secondary-btn" onclick="goHome()">Back to Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: CODING MODE -->
+  <div id="screen-coding" class="screen">
+    <div class="mode-header">
+      <button class="back-btn" onclick="goHome()">← Home</button>
+      <span class="mode-badge">Coding Mode</span>
+    </div>
+
+    <!-- Step 1: Topic input -->
+    <div id="coding-step-topic" class="coding-step active">
+      <div class="step-container">
+        <h2 class="step-title">What have you been learning?</h2>
+        <p class="step-sub">Enter a topic or technology. Athena will map the full curriculum and ask what you've covered.</p>
+        <input type="text" id="topic-input" class="topic-input" placeholder="e.g. HTML, CSS Flexbox, JavaScript Arrays, Python basics..." />
+        <button class="primary-btn" onclick="generateChecklist()">
+          <span id="checklist-btn-text">Map the Curriculum</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Checklist -->
+    <div id="coding-step-checklist" class="coding-step">
+      <div class="step-container">
+        <h2 class="step-title">What have you covered?</h2>
+        <p class="step-sub">Check every topic you've actually studied. Be honest — Athena will only test you on what you select.</p>
+        <div id="checklist-container" class="checklist-container"></div>
+        <button class="primary-btn" onclick="generateProject()">
+          <span id="project-btn-text">Generate My Project</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Project + Editor -->
+    <div id="coding-step-editor" class="coding-step">
+      <div class="editor-layout">
+        <div class="project-brief" id="project-brief">
+          <h3>Your Project</h3>
+          <div id="project-description"></div>
+          <div id="project-requirements"></div>
+        </div>
+
+        <div class="editor-section">
+          <div class="editor-tabs" id="editor-tabs">
+            <button class="tab-btn active" data-tab="html" onclick="switchTab('html')">HTML</button>
+            <button class="tab-btn" data-tab="css" onclick="switchTab('css')" id="css-tab" style="display:none">CSS</button>
+            <button class="tab-btn" data-tab="js" onclick="switchTab('js')" id="js-tab" style="display:none">JS</button>
+          </div>
+          <div class="editor-wrapper">
+            <textarea id="editor-html" class="code-editor" placeholder="Write your HTML here..." spellcheck="false" oninput="updatePreview()"></textarea>
+            <textarea id="editor-css" class="code-editor" placeholder="Write your CSS here..." spellcheck="false" style="display:none" oninput="updatePreview()"></textarea>
+            <textarea id="editor-js" class="code-editor" placeholder="Write your JavaScript here..." spellcheck="false" style="display:none" oninput="updatePreview()"></textarea>
+          </div>
+          <button class="primary-btn evaluate-btn" onclick="evaluateCode()">
+            <span id="eval-btn-text">Evaluate My Code</span>
+          </button>
+        </div>
+
+        <div class="preview-section">
+          <div class="preview-header">
+            <span>Preview</span>
+            <button class="refresh-btn" onclick="updatePreview()">↺</button>
+          </div>
+          <iframe id="preview-frame" class="preview-frame"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Code Evaluation -->
+    <div id="coding-step-eval" class="coding-step">
+      <div class="eval-container">
+        <h2 class="eval-title">Code Evaluation</h2>
+        <div class="eval-score-row">
+          <div class="eval-grade" id="eval-grade">—</div>
+          <div class="eval-grade-label">/ 10</div>
+        </div>
+        <div class="eval-sections">
+          <div class="eval-section" id="eval-strengths">
+            <h3>✓ Strengths</h3>
+            <div class="eval-content"></div>
+          </div>
+          <div class="eval-section" id="eval-weaknesses">
+            <h3>✗ Weaknesses</h3>
+            <div class="eval-content"></div>
+          </div>
+          <div class="eval-section" id="eval-missing">
+            <h3>◎ Missing Concepts</h3>
+            <div class="eval-content"></div>
+          </div>
+          <div class="eval-section" id="eval-improved">
+            <h3>⟳ Improved Reference</h3>
+            <div class="eval-content code-block"></div>
+          </div>
+        </div>
+        <div class="eval-actions">
+          <button class="primary-btn" onclick="backToEditor()">Revise My Code</button>
+          <button class="secondary-btn" onclick="goHome()">Back to Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="js/pdf-parser.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/pdf-mode.js"></script>
+  <script src="js/coding-mode.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
