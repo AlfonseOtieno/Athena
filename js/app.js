@@ -15,6 +15,14 @@ Be precise, direct, and honest. Identify exactly what is missing and why it matt
 Don't soften criticism. Acknowledge what is genuinely good.
 Every response must be valid JSON with no markdown fences or preamble.`;
 
+const SYSTEM_LANG_MODE = `You are Athena, a language learning AI grounded in Swain's Output Hypothesis and modern neurolinguistic research.
+Your purpose is to make learners PRODUCE language, not just recognise it.
+Never give grammar drills, fill-in-the-blanks, or multiple choice vocabulary tests.
+Every task should push the learner to articulate real thoughts in the target language.
+Evaluate on whether they can COMMUNICATE — precisely, coherently, comprehensibly.
+Be honest. Calibrate to their level. Don't inflate. Don't be discouraging.
+Every response must be valid JSON with no markdown fences or preamble.`;
+
 const SYSTEM_CODING_MODE = `You are Athena, a coding education AI.
 You understand full programming curricula and can identify exactly what a student has and hasn't learned.
 You assign real, application-level projects — not exercises or syntax drills.
@@ -47,6 +55,11 @@ function launchMode(mode) {
     document.querySelectorAll('.pdf-step').forEach(s => s.classList.remove('active'));
     document.getElementById('pdf-step-upload').classList.add('active');
     document.getElementById('pdf-score-display').style.display = 'none';
+  } else if (mode === 'lang') {
+    showScreen('screen-lang');
+    document.querySelectorAll('.lang-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('lang-step-setup').classList.add('active');
+    document.getElementById('lang-score-display').style.display = 'none';
   } else if (mode === 'coding') {
     showScreen('screen-coding');
     document.querySelectorAll('.coding-step').forEach(s => s.classList.remove('active'));

@@ -50,7 +50,7 @@
         </p>
       </div>
 
-      <div class="mode-cards">
+      <div class="mode-cards mode-cards-3">
         <div class="mode-card" id="card-pdf" onclick="enterMode('pdf')">
           <div class="card-glyph">𝛙</div>
           <div class="card-body">
@@ -76,6 +76,21 @@
               <li>Application-level project generation</li>
               <li>Live code editor + preview</li>
               <li>Rubric-based grading (0–10)</li>
+            </ul>
+          </div>
+          <div class="card-cta">Begin →</div>
+        </div>
+
+        <div class="mode-card mode-card-lang" id="card-lang" onclick="enterMode('lang')">
+          <div class="card-glyph">α</div>
+          <div class="card-body">
+            <h2>Language Mode</h2>
+            <p>Pick a language and your level. Athena gives you real passages to read, then pushes you to produce — writing compositions, answering comprehension questions, and articulating thoughts.</p>
+            <ul class="card-features">
+              <li>Comprehension passages by level</li>
+              <li>Forced output — write in the language</li>
+              <li>Composition prompts (describe, argue, narrate)</li>
+              <li>Fluency + precision diagnostic feedback</li>
             </ul>
           </div>
           <div class="card-cta">Begin →</div>
@@ -344,11 +359,165 @@
     </div>
   </div>
 
+
+  <!-- SCREEN: LANGUAGE MODE -->
+  <div id="screen-lang" class="screen">
+    <div class="mode-header">
+      <button class="back-btn" onclick="goHome()">← Home</button>
+      <div class="mode-title-row">
+        <span class="mode-badge">Language Mode</span>
+        <div class="session-score" id="lang-score-display" style="display:none">
+          Task <span id="lang-task-num">1</span> / <span id="lang-task-total">3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Language + Level setup -->
+    <div id="lang-step-setup" class="lang-step active">
+      <div class="step-container">
+        <h2 class="step-title">Choose Your Language</h2>
+        <p class="step-sub">Select the language you are learning and your current level. Be honest — the tasks will be calibrated to where you actually are.</p>
+
+        <div class="lang-setup-grid">
+          <div class="setup-field">
+            <label class="setup-label">Language</label>
+            <input type="text" id="lang-input" class="topic-input" placeholder="e.g. French, Swahili, Japanese, Spanish..." />
+          </div>
+
+          <div class="setup-field">
+            <label class="setup-label">Your Level</label>
+            <div class="level-selector" id="level-selector">
+              <button class="level-btn" data-level="beginner" onclick="selectLevel('beginner')">
+                <span class="level-name">Beginner</span>
+                <span class="level-desc">I know basic words and phrases</span>
+              </button>
+              <button class="level-btn" data-level="elementary" onclick="selectLevel('elementary')">
+                <span class="level-name">Elementary</span>
+                <span class="level-desc">I can form simple sentences</span>
+              </button>
+              <button class="level-btn" data-level="intermediate" onclick="selectLevel('intermediate')">
+                <span class="level-name">Intermediate</span>
+                <span class="level-desc">I can handle everyday topics</span>
+              </button>
+              <button class="level-btn" data-level="advanced" onclick="selectLevel('advanced')">
+                <span class="level-name">Advanced</span>
+                <span class="level-desc">I can discuss complex ideas</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="setup-field">
+            <label class="setup-label">Session Focus</label>
+            <div class="focus-selector">
+              <label class="focus-option">
+                <input type="checkbox" id="focus-comprehension" checked />
+                <span>Reading Comprehension</span>
+              </label>
+              <label class="focus-option">
+                <input type="checkbox" id="focus-composition" checked />
+                <span>Written Composition</span>
+              </label>
+              <label class="focus-option">
+                <input type="checkbox" id="focus-expression" checked />
+                <span>Free Expression</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button class="primary-btn" onclick="startLangSession()">
+          Begin Session
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Task (comprehension / composition / expression) -->
+    <div id="lang-step-task" class="lang-step">
+      <div class="lang-task-container">
+
+        <div class="lang-task-header">
+          <div class="lang-task-type" id="lang-task-type-badge">Comprehension</div>
+          <div class="lang-task-meta" id="lang-task-meta"></div>
+        </div>
+
+        <!-- Passage (shown for comprehension tasks) -->
+        <div id="lang-passage-block" class="lang-passage-block" style="display:none">
+          <div class="lang-passage-label">Read this passage carefully</div>
+          <div class="lang-passage-text" id="lang-passage-text"></div>
+          <button class="lang-hide-btn" id="lang-hide-btn" onclick="togglePassage()">Hide Passage</button>
+        </div>
+
+        <!-- Task prompt -->
+        <div class="lang-prompt-block">
+          <p class="lang-prompt-text" id="lang-prompt-text"></p>
+        </div>
+
+        <!-- Response area -->
+        <div class="lang-response-block">
+          <label class="lang-response-label">Your response — write in <span id="lang-response-lang">the target language</span></label>
+          <textarea id="lang-response" class="lang-textarea" placeholder="Write your response here..."></textarea>
+          <div class="lang-word-count"><span id="lang-wc">0</span> words</div>
+        </div>
+
+        <button class="primary-btn" onclick="submitLangResponse()">
+          Submit Response
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Task feedback -->
+    <div id="lang-step-feedback" class="lang-step">
+      <div class="lang-feedback-container">
+        <div class="lang-feedback-scores" id="lang-feedback-scores"></div>
+        <div class="lang-feedback-sections" id="lang-feedback-sections"></div>
+        <button class="primary-btn" onclick="nextLangTask()">
+          <span id="lang-next-btn-text">Next Task →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Session report -->
+    <div id="lang-step-report" class="lang-step">
+      <div class="report-container">
+        <h2 class="report-title">Session Report</h2>
+        <div class="score-ring-container">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" class="ring-bg"/>
+            <circle cx="60" cy="60" r="50" class="ring-fill" id="lang-ring-fill"/>
+          </svg>
+          <div class="score-ring-label">
+            <span id="lang-final-score">0</span>
+            <span class="score-denom">/10</span>
+          </div>
+        </div>
+        <div class="report-sections">
+          <div class="report-section strong">
+            <h3>✓ What You Can Do</h3>
+            <ul id="lang-report-strong"></ul>
+          </div>
+          <div class="report-section weak">
+            <h3>⚠ Gaps to Address</h3>
+            <ul id="lang-report-weak"></ul>
+          </div>
+          <div class="report-section revisit">
+            <h3>◎ Practise This</h3>
+            <ul id="lang-report-practise"></ul>
+          </div>
+        </div>
+        <div class="report-actions">
+          <button class="primary-btn" onclick="restartLangSession()">New Session</button>
+          <button class="secondary-btn" onclick="goHome()">Back to Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="js/pdf-parser.js"></script>
   <script src="js/gemini.js"></script>
   <script src="js/pdf-mode.js"></script>
+  <script src="js/lang-mode.js"></script>
   <script src="js/coding-mode.js"></script>
   <script src="js/app.js"></script>
   <script>
