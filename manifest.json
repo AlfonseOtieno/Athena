@@ -1,7 +1,8 @@
 {
   "name": "Athena — Mastery Learning",
   "short_name": "Athena",
-  "description": "AI-powered mastery learning through recall, application, and diagnostic feedback.",
+  "description": "AI-powered mastery learning through recall, application, and diagnostic feedback. Built by Alfonse Otieno.",
+  "author": "Alfonse Otieno",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",

@@ -85,6 +85,12 @@
       <p class="home-footer-note">
         Your API key stays in your browser. Nothing is stored on any server.
       </p>
+
+      <!-- Built by CTA -->
+      <div class="built-by">
+        <span>Built by</span>
+        <a href="https://alfonseotieno.github.io/Personal-portfolio-/" target="_blank" rel="noopener">Alfonse Otieno</a>
+      </div>
     </main>
   </div>
 
@@ -247,14 +253,38 @@
 
     <!-- Step 3: Project + Editor -->
     <div id="coding-step-editor" class="coding-step">
-      <div class="editor-layout">
+
+      <!-- View mode toolbar -->
+      <div class="editor-toolbar">
+        <span class="editor-toolbar-label">View</span>
+        <div class="view-btns">
+          <button class="view-btn active" id="view-default" onclick="setEditorView('default')" title="Default — all panels">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="5" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="16" y="2" width="2" height="16" rx="1" fill="currentColor" opacity="0.3"/></svg>
+            All
+          </button>
+          <button class="view-btn" id="view-split" onclick="setEditorView('split')" title="Split — editor + preview only">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+            Split
+          </button>
+          <button class="view-btn" id="view-editor" onclick="setEditorView('editor')" title="Editor fullscreen">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M6 7l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Code
+          </button>
+          <button class="view-btn" id="view-preview" onclick="setEditorView('preview')" title="Preview fullscreen">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+            Preview
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-layout" id="editor-layout">
         <div class="project-brief" id="project-brief">
           <h3>Your Project</h3>
           <div id="project-description"></div>
           <div id="project-requirements"></div>
         </div>
 
-        <div class="editor-section">
+        <div class="editor-section" id="editor-section">
           <div class="editor-tabs" id="editor-tabs">
             <button class="tab-btn active" data-tab="html" onclick="switchTab('html')">HTML</button>
             <button class="tab-btn" data-tab="css" onclick="switchTab('css')" id="css-tab" style="display:none">CSS</button>
@@ -270,7 +300,7 @@
           </button>
         </div>
 
-        <div class="preview-section">
+        <div class="preview-section" id="preview-section">
           <div class="preview-header">
             <span>Preview</span>
             <button class="refresh-btn" onclick="updatePreview()">↺</button>
