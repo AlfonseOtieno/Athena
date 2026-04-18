@@ -1,16 +1,21 @@
 // ============================================================
 // gemini.js — Athena's AI interface
-// Model: gemini-1.5-flash
-// No fallback chain — clean error handling for quota limits
+// Model order confirmed from working projects (Apela, CodeReview)
 // ============================================================
 
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODELS = [
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+];
 
-async function callGemini(prompt, systemInstruction = '') {
+async function callGemini(prompt, systemInstruction = '', modelIndex = 0) {
   const apiKey = sessionStorage.getItem('athena_api_key');
   if (!apiKey) throw new Error('No API key set');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const model = GEMINI_MODELS[modelIndex];
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const body = {
     contents: [{ parts: [{ text: prompt }], role: 'user' }],
@@ -34,23 +39,19 @@ async function callGemini(prompt, systemInstruction = '') {
     const err = await res.json().catch(() => ({}));
     const status = res.status;
 
-    if (status === 429) {
-      throw new Error('Rate limit reached. Wait 1–2 minutes then try again. Free tier allows 15 requests/minute.');
-    }
-    if (status === 400) {
-      throw new Error('Bad request — your API key may be invalid. Re-enter it from aistudio.google.com.');
-    }
-    if (status === 403) {
-      throw new Error('API key unauthorized. Make sure the Gemini API is enabled in your Google AI Studio project.');
-    }
-    if (status === 404) {
-      throw new Error('Model not available for your API key. Make sure you are using a key from aistudio.google.com (not Google Cloud).');
+    // Retry on quota or model-not-found — try next model in chain
+    if ((status === 429 || status === 404 || status === 503) && modelIndex < GEMINI_MODELS.length - 1) {
+      console.warn(`Model ${model} returned ${status}, trying ${GEMINI_MODELS[modelIndex + 1]}...`);
+      return callGemini(prompt, systemInstruction, modelIndex + 1);
     }
 
-    // Fallback: show the raw message but trim it
+    // All models exhausted or unrecoverable error — show clean message
+    if (status === 429) throw new Error('Rate limit reached. Wait 1–2 minutes and try again. (Free tier: 15 requests/min)');
+    if (status === 400 || status === 403) throw new Error('Invalid API key. Re-enter your key from aistudio.google.com.');
+    if (status === 404) throw new Error('No available model found for your API key. Make sure your key is from aistudio.google.com.');
+
     const raw = err?.error?.message || '';
-    const short = raw.length > 120 ? raw.slice(0, 120) + '...' : raw;
-    throw new Error(short || `API error ${status}`);
+    throw new Error(raw.length > 120 ? raw.slice(0, 120) + '...' : raw || `API error ${status}`);
   }
 
   const data = await res.json();
@@ -58,7 +59,7 @@ async function callGemini(prompt, systemInstruction = '') {
   return text.trim();
 }
 
-// Parse JSON safely from Gemini response (strips markdown fences)
+// Parse JSON safely — strips markdown fences if Gemini wraps response
 function parseGeminiJSON(text) {
   const clean = text
     .replace(/^```json\s*/i, '')
