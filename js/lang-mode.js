@@ -1,32 +1,75 @@
 // ============================================================
 // lang-mode.js — Athena Language Mode
 //
-// Grounded in Swain's Output Hypothesis & interaction research:
-// - Forced output: learners must produce, not just recognise
-// - Comprehension → production pipeline per task
-// - Feedback targets fluency gaps, not grammar rules in isolation
-// - Adaptive: easier tasks if struggling, harder if performing well
+// Built on Swain's Output Hypothesis: learners must PRODUCE.
+// Three written task types + one spoken task type (Speaking Mode).
+// Speaking uses Web Speech API (Chrome/Edge) → transcript → Gemini eval.
 // ============================================================
 
 const LangMode = (() => {
 
   let state = {
     language: '',
-    level: '',         // beginner | elementary | intermediate | advanced
-    focus: [],         // ['comprehension', 'composition', 'expression']
-    tasks: [],         // generated task objects
+    level: '',
+    focus: [],
+    tasks: [],
     currentTask: 0,
     responses: [],
-    scores: [],        // per task 0-10
+    scores: [],
     passageVisible: true,
+    // Speech
+    recognition: null,
+    isRecording: false,
+    transcript: '',
+    interimTranscript: '',
+    speechSupported: false,
   };
 
   const LEVEL_DESCRIPTORS = {
     beginner:     'A1–A2: knows basic greetings, numbers, common nouns. Very limited sentence construction.',
     elementary:   'A2–B1: can form simple present/past sentences on familiar topics. Limited vocabulary range.',
-    intermediate: 'B1–B2: can discuss everyday topics, express opinions, handle most situations. Some errors under complexity.',
-    advanced:     'C1–C2: can discuss abstract/complex ideas with nuance. Near-fluent but may have edge gaps.',
+    intermediate: 'B1–B2: can discuss everyday topics, express opinions, handle most situations. Some errors under pressure.',
+    advanced:     'C1–C2: can discuss abstract/complex ideas with nuance. Near-fluent with possible edge gaps.',
   };
+
+  // ─── Init speech API ──────────────────────────────────────
+  function initSpeech() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      state.speechSupported = true;
+      state.recognition = new SR();
+      state.recognition.continuous = true;
+      state.recognition.interimResults = true;
+
+      state.recognition.onresult = (event) => {
+        state.interimTranscript = '';
+        let final = state.transcript;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript + ' ';
+          } else {
+            state.interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        state.transcript = final;
+        updateTranscriptDisplay();
+      };
+
+      state.recognition.onerror = (e) => {
+        if (e.error !== 'no-speech') {
+          showError('Microphone error: ' + e.error);
+          stopRecording();
+        }
+      };
+
+      state.recognition.onend = () => {
+        if (state.isRecording) {
+          // Restart if still in recording mode (continuous workaround)
+          try { state.recognition.start(); } catch (_) {}
+        }
+      };
+    }
+  }
 
   // ─── Step control ─────────────────────────────────────────
   function showStep(step) {
@@ -52,16 +95,29 @@ const LangMode = (() => {
       comprehension: document.getElementById('focus-comprehension').checked,
       composition:   document.getElementById('focus-composition').checked,
       expression:    document.getElementById('focus-expression').checked,
+      speaking:      document.getElementById('focus-speaking').checked,
     };
 
     state.focus = Object.keys(focusMap).filter(k => focusMap[k]);
     if (state.focus.length === 0) { showError('Please select at least one focus area.'); return; }
+
+    // Warn if speaking selected but not supported
+    if (state.focus.includes('speaking') && !state.speechSupported) {
+      showError('Speaking mode requires Chrome or Edge browser. It has been removed from this session.');
+      state.focus = state.focus.filter(f => f !== 'speaking');
+      if (state.focus.length === 0) return;
+    }
 
     state.language = lang;
     state.tasks = [];
     state.currentTask = 0;
     state.responses = [];
     state.scores = [];
+
+    // Set speech recognition language
+    if (state.recognition) {
+      state.recognition.lang = getLangCode(lang);
+    }
 
     showLoading('Athena is preparing your session...');
 
@@ -70,7 +126,6 @@ const LangMode = (() => {
       state.tasks = tasks;
       hideLoading();
 
-      // Show score tracker
       document.getElementById('lang-score-display').style.display = 'flex';
       document.getElementById('lang-task-total').textContent = tasks.length;
       updateTaskCounter();
@@ -83,53 +138,49 @@ const LangMode = (() => {
     }
   }
 
+  // Map common language names to BCP47 codes for Web Speech API
+  function getLangCode(lang) {
+    const map = {
+      english: 'en-US', french: 'fr-FR', spanish: 'es-ES', german: 'de-DE',
+      italian: 'it-IT', portuguese: 'pt-PT', dutch: 'nl-NL', russian: 'ru-RU',
+      japanese: 'ja-JP', chinese: 'zh-CN', mandarin: 'zh-CN', arabic: 'ar-SA',
+      swahili: 'sw-KE', korean: 'ko-KR', hindi: 'hi-IN', turkish: 'tr-TR',
+      polish: 'pl-PL', swedish: 'sv-SE',
+    };
+    return map[lang.toLowerCase()] || lang;
+  }
+
   async function generateTasks() {
     const levelDesc = LEVEL_DESCRIPTORS[state.level];
     const focusTypes = state.focus;
 
     const prompt = `You are Athena, a language learning AI grounded in Swain's Output Hypothesis.
-Generate a session of ${focusTypes.length * 1} language tasks for a learner of ${state.language}.
-
+Generate exactly ${focusTypes.length} language tasks for a learner of ${state.language}.
 Learner level: ${state.level} (${levelDesc})
-Task types to include: ${focusTypes.join(', ')}
+Task types to include IN THIS ORDER: ${focusTypes.join(', ')}
 
-Rules:
-- "comprehension": Provide a short passage IN ${state.language} (4-8 sentences, level-appropriate), then ask 2 comprehension questions the learner must answer IN ${state.language}.
-- "composition": Give a clear writing prompt the learner responds to IN ${state.language} (no passage needed). E.g. "Describe your morning routine", "Write about a challenge you overcame", "Argue for or against owning a pet".
-- "expression": Ask the learner to write freely on an open topic IN ${state.language} for at least 60 words. Pick compelling, real-world topics — not textbook prompts.
+RULES:
+- "comprehension": Short passage IN ${state.language} (4-8 sentences, level-appropriate). Two comprehension questions the learner answers IN ${state.language}.
+- "composition": A real writing prompt (describe, argue, narrate) — learner writes IN ${state.language}. No passage.
+- "expression": An open compelling topic — learner writes freely IN ${state.language}. No passage. Pick real-world topics.
+- "speaking": A speaking prompt — learner will SPEAK in ${state.language} for 1-2 minutes. Topic should match their level. No passage needed.
 
-For beginner/elementary: use simple sentence structures, familiar vocabulary, short tasks.
-For intermediate/advanced: use nuanced topics, longer passages, and push for precise expression.
+For beginner/elementary: simple sentence structures, familiar topics, shorter tasks.
+For intermediate/advanced: nuanced topics, longer responses, push for precise expression.
 
-DO NOT include grammar exercises, fill-in-the-blanks, or translation tasks.
-All writing responses must be IN ${state.language}, not the learner's native language.
+NO grammar fill-in-the-blanks. NO translation tasks. NO multiple choice.
+All written/spoken responses must be IN ${state.language}.
 
-Respond ONLY with a valid JSON array (no fences, no preamble):
+Respond ONLY with a valid JSON array (no fences):
 [
   {
-    "type": "comprehension",
-    "passage": "...(passage in ${state.language})...",
-    "prompt": "...(2 comprehension questions, written in English so the learner understands the task)...",
+    "type": "comprehension|composition|expression|speaking",
+    "passage": "passage text in ${state.language} or null",
+    "prompt": "task instruction in English",
     "minWords": 30,
     "difficulty": "${state.level}"
-  },
-  {
-    "type": "composition",
-    "passage": null,
-    "prompt": "...(composition prompt in English)...",
-    "minWords": 60,
-    "difficulty": "${state.level}"
-  },
-  {
-    "type": "expression",
-    "passage": null,
-    "prompt": "...(free expression prompt in English)...",
-    "minWords": 80,
-    "difficulty": "${state.level}"
   }
-]
-
-Include exactly the task types in this order: ${focusTypes.join(', ')}.`;
+]`;
 
     const raw = await callGemini(prompt, SYSTEM_LANG_MODE);
     return parseGeminiJSON(raw);
@@ -140,21 +191,22 @@ Include exactly the task types in this order: ${focusTypes.join(', ')}.`;
     const task = state.tasks[state.currentTask];
     if (!task) { showReport(); return; }
 
+    const isSpeaking = task.type === 'speaking';
+
     // Type badge
     const typeBadge = document.getElementById('lang-task-type-badge');
     const typeLabels = {
       comprehension: 'Reading Comprehension',
       composition:   'Written Composition',
       expression:    'Free Expression',
+      speaking:      'Speaking Task',
     };
     typeBadge.textContent = typeLabels[task.type] || task.type;
     typeBadge.className = `lang-task-type lang-type-${task.type}`;
 
-    // Meta
-    document.getElementById('lang-task-meta').textContent =
-      `${state.language} · ${task.difficulty}`;
+    document.getElementById('lang-task-meta').textContent = `${state.language} · ${task.difficulty}`;
 
-    // Passage block
+    // Passage
     const passageBlock = document.getElementById('lang-passage-block');
     if (task.passage) {
       passageBlock.style.display = 'block';
@@ -168,16 +220,81 @@ Include exactly the task types in this order: ${focusTypes.join(', ')}.`;
     // Prompt
     document.getElementById('lang-prompt-text').textContent = task.prompt;
 
-    // Response area
-    document.getElementById('lang-response').value = '';
-    document.getElementById('lang-wc').textContent = '0';
-    document.getElementById('lang-response-lang').textContent = state.language;
+    // Show/hide response areas
+    document.getElementById('lang-written-block').style.display = isSpeaking ? 'none' : 'block';
+    document.getElementById('lang-speaking-block').style.display = isSpeaking ? 'block' : 'none';
 
-    // Min word hint
-    document.getElementById('lang-response').placeholder =
-      `Write your response in ${state.language}... (at least ${task.minWords} words)`;
+    if (!isSpeaking) {
+      document.getElementById('lang-response').value = '';
+      document.getElementById('lang-wc').textContent = '0';
+      document.getElementById('lang-response-lang').textContent = state.language;
+      document.getElementById('lang-response').placeholder =
+        `Write your response in ${state.language}... (at least ${task.minWords} words)`;
+    } else {
+      resetSpeakingUI();
+    }
 
     updateTaskCounter();
+  }
+
+  // ─── Speaking UI ──────────────────────────────────────────
+  function resetSpeakingUI() {
+    state.transcript = '';
+    state.interimTranscript = '';
+    state.isRecording = false;
+    const btn = document.getElementById('record-btn');
+    if (btn) {
+      btn.textContent = '🎙 Start Speaking';
+      btn.classList.remove('recording');
+    }
+    const display = document.getElementById('transcript-display');
+    if (display) display.textContent = '';
+    const wc = document.getElementById('speech-wc');
+    if (wc) wc.textContent = '0 words';
+  }
+
+  function toggleRecording() {
+    if (state.isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }
+
+  function startRecording() {
+    if (!state.recognition) return;
+    state.transcript = '';
+    state.interimTranscript = '';
+    state.isRecording = true;
+    try {
+      state.recognition.start();
+    } catch (_) {}
+    const btn = document.getElementById('record-btn');
+    btn.textContent = '⏹ Stop Speaking';
+    btn.classList.add('recording');
+    document.getElementById('recording-indicator').style.display = 'flex';
+  }
+
+  function stopRecording() {
+    state.isRecording = false;
+    try { state.recognition.stop(); } catch (_) {}
+    const btn = document.getElementById('record-btn');
+    if (btn) {
+      btn.textContent = '🎙 Start Speaking';
+      btn.classList.remove('recording');
+    }
+    const indicator = document.getElementById('recording-indicator');
+    if (indicator) indicator.style.display = 'none';
+  }
+
+  function updateTranscriptDisplay() {
+    const display = document.getElementById('transcript-display');
+    if (!display) return;
+    display.textContent = state.transcript + state.interimTranscript;
+    const words = (state.transcript + state.interimTranscript)
+      .trim().split(/\s+/).filter(w => w).length;
+    const wc = document.getElementById('speech-wc');
+    if (wc) wc.textContent = `${words} words spoken`;
   }
 
   function togglePassage() {
@@ -188,38 +305,58 @@ Include exactly the task types in this order: ${focusTypes.join(', ')}.`;
     btn.textContent = state.passageVisible ? 'Hide Passage' : 'Show Passage';
   }
 
-  // Live word count
+  // Live word count for written
   document.addEventListener('DOMContentLoaded', () => {
-    const textarea = document.getElementById('lang-response');
-    if (textarea) {
-      textarea.addEventListener('input', () => {
-        const words = textarea.value.trim().split(/\s+/).filter(w => w.length > 0).length;
+    const ta = document.getElementById('lang-response');
+    if (ta) {
+      ta.addEventListener('input', () => {
+        const words = ta.value.trim().split(/\s+/).filter(w => w.length > 0).length;
         document.getElementById('lang-wc').textContent = words;
       });
     }
+    initSpeech();
+
+    // Show/hide speaking option based on browser support
+    const speakingOption = document.getElementById('focus-speaking-row');
+    if (speakingOption) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        speakingOption.style.display = 'none';
+      }
+    }
   });
 
-  // ─── Response submission ───────────────────────────────────
+  // ─── Submit ───────────────────────────────────────────────
   async function submitResponse() {
     const task = state.tasks[state.currentTask];
-    const response = document.getElementById('lang-response').value.trim();
+    const isSpeaking = task.type === 'speaking';
 
-    if (!response) { showError('Please write your response first.'); return; }
-
-    const wordCount = response.split(/\s+/).filter(w => w.length > 0).length;
-    if (wordCount < Math.floor(task.minWords * 0.5)) {
-      showError(`Your response is too short. Try to write at least ${task.minWords} words.`);
-      return;
+    let response = '';
+    if (isSpeaking) {
+      stopRecording();
+      response = state.transcript.trim();
+      if (!response) {
+        showError('No speech detected. Press "Start Speaking" and speak into your microphone.');
+        return;
+      }
+    } else {
+      response = document.getElementById('lang-response').value.trim();
+      if (!response) { showError('Please write your response first.'); return; }
+      const wc = response.split(/\s+/).filter(w => w).length;
+      if (wc < Math.floor(task.minWords * 0.5)) {
+        showError(`Too short — aim for at least ${task.minWords} words.`);
+        return;
+      }
     }
 
     state.responses[state.currentTask] = response;
-    showLoading('Evaluating your response...');
+    showLoading(isSpeaking ? 'Analysing your speech...' : 'Evaluating your response...');
 
     try {
-      const feedback = await evaluateResponse(task, response);
+      const feedback = await evaluateResponse(task, response, isSpeaking);
       hideLoading();
       state.scores[state.currentTask] = feedback.score;
-      renderFeedback(feedback);
+      renderFeedback(feedback, isSpeaking);
       adaptDifficulty(feedback.score);
       showStep('feedback');
     } catch (err) {
@@ -228,27 +365,29 @@ Include exactly the task types in this order: ${focusTypes.join(', ')}.`;
     }
   }
 
-  async function evaluateResponse(task, response) {
-    const prompt = `You are Athena evaluating a ${state.language} language learner's written response.
+  async function evaluateResponse(task, response, isSpeaking) {
+    const levelDesc = LEVEL_DESCRIPTORS[state.level];
 
-Learner level: ${state.level} (${LEVEL_DESCRIPTORS[state.level]})
-Task type: ${task.type}
-Task prompt: ${task.prompt}
-${task.passage ? `Original passage:\n${task.passage}\n` : ''}
-Learner's response:
+    const prompt = isSpeaking
+      ? `You are Athena evaluating a ${state.language} SPEAKING task response.
+The learner spoke and their speech was transcribed to text. Evaluate the SPOKEN content.
+
+Learner level: ${state.level} (${levelDesc})
+Speaking prompt: ${task.prompt}
+Transcribed speech:
 ---
 ${response}
 ---
 
-Evaluate based on Swain's Output Hypothesis criteria:
-1. Comprehensibility: Can the message be understood? Is it coherent?
-2. Precision: Does the learner express ideas accurately in ${state.language}?
-3. Fluency indicators: Are there natural constructions, or is it heavily translated from English?
-4. Task completion: Did they actually answer what was asked?
-5. Vocabulary range: Is vocabulary appropriate and varied for their level?
+Evaluate based on:
+1. Communicative effectiveness: Did they address the topic? Could a listener understand them?
+2. Fluency indicators in the transcript: Natural word order? Appropriate vocabulary? Or heavy L1 interference visible in phrasing?
+3. Vocabulary range: Is word choice varied and appropriate for their level?
+4. Coherence: Did ideas connect logically?
+5. Pronunciation note: Based on typical patterns for learners of ${state.language}, note any likely pronunciation challenges visible in word choices or common errors.
 
-DO NOT focus on grammar rules in isolation. Focus on whether they can COMMUNICATE precisely.
-Be honest. Don't inflate scores. But calibrate to their stated level — a beginner using basic sentences well deserves credit.
+NOTE: The transcript may have errors from speech recognition — be lenient about exact spelling but evaluate the intended meaning.
+Be honest. Calibrate to their level.
 
 Respond ONLY with valid JSON (no fences):
 {
@@ -257,28 +396,57 @@ Respond ONLY with valid JSON (no fences):
   "precision": 7,
   "fluency": 7,
   "taskCompletion": 8,
-  "what_worked": "Specific things the learner expressed well, with examples from their text",
-  "gaps": "Specific gaps — phrases they struggled with, unnatural constructions, ideas they couldn't express",
-  "better_phrasing": "2-3 example sentences from their response rewritten more naturally in ${state.language}",
-  "next_focus": "One concrete thing to practise next — specific, not generic"
+  "what_worked": "What they expressed well, referencing specific phrases from transcript",
+  "gaps": "Specific gaps — unnatural phrasing, ideas they struggled to express, vocabulary limitations",
+  "better_phrasing": "2-3 of their sentences rewritten more naturally in ${state.language}",
+  "next_focus": "One specific thing to practise — vocabulary, phrasing pattern, or topic area"
+}`
+      : `You are Athena evaluating a ${state.language} written response.
+
+Learner level: ${state.level} (${levelDesc})
+Task type: ${task.type}
+Task prompt: ${task.prompt}
+${task.passage ? `Passage:\n${task.passage}\n` : ''}
+Learner's response:
+---
+${response}
+---
+
+Evaluate on Swain's Output Hypothesis criteria:
+1. Comprehensibility: coherent and understandable?
+2. Precision: ideas expressed accurately in ${state.language}?
+3. Fluency: natural constructions or heavily translated from L1?
+4. Task completion: did they answer what was asked?
+
+Be honest. Calibrate to their level.
+
+Respond ONLY with valid JSON (no fences):
+{
+  "score": 7.5,
+  "comprehensibility": 8,
+  "precision": 7,
+  "fluency": 7,
+  "taskCompletion": 8,
+  "what_worked": "Specific things they expressed well with examples from their text",
+  "gaps": "Specific gaps — unnatural constructions, vocabulary limitations, missed ideas",
+  "better_phrasing": "2-3 of their sentences rewritten more naturally in ${state.language}",
+  "next_focus": "One concrete thing to practise next"
 }`;
 
     const raw = await callGemini(prompt, SYSTEM_EVALUATOR);
     return parseGeminiJSON(raw);
   }
 
-  // ─── Feedback rendering ───────────────────────────────────
-  function renderFeedback(fb) {
-    // Score grid
-    const scoresEl = document.getElementById('lang-feedback-scores');
+  // ─── Feedback ─────────────────────────────────────────────
+  function renderFeedback(fb, isSpeaking) {
     const dims = [
       { key: 'comprehensibility', label: 'Comprehensibility' },
-      { key: 'precision',         label: 'Precision' },
+      { key: 'precision',         label: isSpeaking ? 'Vocabulary' : 'Precision' },
       { key: 'fluency',           label: 'Fluency' },
       { key: 'taskCompletion',    label: 'Task Completion' },
     ];
 
-    scoresEl.innerHTML = `
+    document.getElementById('lang-feedback-scores').innerHTML = `
       <div class="lang-overall-score">
         <span class="lang-score-num">${fb.score}</span>
         <span class="lang-score-denom">/10</span>
@@ -291,14 +459,10 @@ Respond ONLY with valid JSON (no fences):
               <div class="lang-dim-fill" style="width:${(fb[d.key] || 0) * 10}%"></div>
             </div>
             <div class="lang-dim-val">${fb[d.key] || '—'}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+          </div>`).join('')}
+      </div>`;
 
-    // Feedback sections
-    const sectionsEl = document.getElementById('lang-feedback-sections');
-    sectionsEl.innerHTML = `
+    document.getElementById('lang-feedback-sections').innerHTML = `
       <div class="lang-fb-section lang-fb-good">
         <h4>✓ What worked</h4>
         <p>${fb.what_worked || '—'}</p>
@@ -314,34 +478,25 @@ Respond ONLY with valid JSON (no fences):
       <div class="lang-fb-section lang-fb-next">
         <h4>⬡ Practise next</h4>
         <p>${fb.next_focus || '—'}</p>
-      </div>
-    `;
+      </div>`;
 
-    // Next button text
     const isLast = state.currentTask >= state.tasks.length - 1;
     document.getElementById('lang-next-btn-text').textContent = isLast ? 'See Report' : 'Next Task →';
   }
 
-  // ─── Adaptive difficulty ──────────────────────────────────
   function adaptDifficulty(score) {
-    // If remaining tasks exist, nudge their difficulty
-    const recentScores = state.scores.filter(s => s !== undefined);
-    const avg = recentScores.reduce((a, b) => a + b, 0) / (recentScores.length || 1);
-
+    const recent = state.scores.filter(s => s !== undefined);
+    const avg = recent.reduce((a, b) => a + b, 0) / (recent.length || 1);
     const levels = ['beginner', 'elementary', 'intermediate', 'advanced'];
-    const currentIdx = levels.indexOf(state.level);
-
-    let targetLevel = state.level;
-    if (avg >= 8.5 && currentIdx < levels.length - 1) targetLevel = levels[currentIdx + 1];
-    else if (avg <= 4 && currentIdx > 0) targetLevel = levels[currentIdx - 1];
-
-    // Apply to remaining tasks
+    const idx = levels.indexOf(state.level);
+    let target = state.level;
+    if (avg >= 8.5 && idx < levels.length - 1) target = levels[idx + 1];
+    else if (avg <= 4 && idx > 0) target = levels[idx - 1];
     for (let i = state.currentTask + 1; i < state.tasks.length; i++) {
-      state.tasks[i].difficulty = targetLevel;
+      state.tasks[i].difficulty = target;
     }
   }
 
-  // ─── Task navigation ──────────────────────────────────────
   function nextTask() {
     state.currentTask++;
     if (state.currentTask >= state.tasks.length) {
@@ -357,17 +512,13 @@ Respond ONLY with valid JSON (no fences):
     document.getElementById('lang-task-total').textContent = state.tasks.length;
   }
 
-  // ─── Session report ───────────────────────────────────────
   async function showReport() {
     const total = state.scores.length;
-    const avg = total > 0
-      ? state.scores.reduce((a, b) => a + b, 0) / total
-      : 0;
+    const avg = total > 0 ? state.scores.reduce((a, b) => a + b, 0) / total : 0;
     const grade = avg.toFixed(1);
 
     document.getElementById('lang-final-score').textContent = grade;
-    const circumference = 314;
-    const offset = circumference - ((avg / 10) * circumference);
+    const offset = 314 - ((avg / 10) * 314);
     setTimeout(() => {
       document.getElementById('lang-ring-fill').style.strokeDashoffset = offset;
     }, 100);
@@ -385,10 +536,9 @@ Respond ONLY with valid JSON (no fences):
     } catch (e) {
       hideLoading();
       document.getElementById('lang-report-strong').innerHTML = '<li>Session complete</li>';
-      document.getElementById('lang-report-weak').innerHTML = '<li>Review your responses above</li>';
-      document.getElementById('lang-report-practise').innerHTML = '<li>Keep writing daily in ' + state.language + '</li>';
+      document.getElementById('lang-report-weak').innerHTML = '<li>Review responses above</li>';
+      document.getElementById('lang-report-practise').innerHTML = `<li>Keep producing in ${state.language} daily</li>`;
     }
-
     showStep('report');
   }
 
@@ -396,60 +546,44 @@ Respond ONLY with valid JSON (no fences):
     const summary = state.tasks.map((t, i) => ({
       type: t.type,
       score: state.scores[i] || 0,
-      response: (state.responses[i] || '').slice(0, 200),
+      excerpt: (state.responses[i] || '').slice(0, 150),
     }));
-
-    const prompt = `Based on this ${state.language} learner's session (level: ${state.level}), write a diagnostic report.
-
-Session data:
-${JSON.stringify(summary, null, 2)}
-
+    const raw = await callGemini(
+      `${state.language} learner session (level: ${state.level}). Diagnose.
+Data: ${JSON.stringify(summary)}
 Respond ONLY with JSON (no fences):
-{
-  "canDo": ["3-4 specific things they demonstrated they can do in ${state.language}"],
-  "gaps": ["3-4 specific gaps or patterns of error observed"],
-  "practise": ["3-4 concrete exercises or activities to improve — be specific, not generic"]
-}`;
-
-    const raw = await callGemini(prompt, SYSTEM_EVALUATOR);
+{"canDo":["3-4 things they demonstrated"],"gaps":["3-4 specific gaps"],"practise":["3-4 concrete exercises"]}`,
+      SYSTEM_EVALUATOR
+    );
     return parseGeminiJSON(raw);
   }
 
   function restartSession() {
+    stopRecording();
     state = {
-      language: '',
-      level: '',
-      focus: [],
-      tasks: [],
-      currentTask: 0,
-      responses: [],
-      scores: [],
-      passageVisible: true,
+      language: '', level: '', focus: [], tasks: [],
+      currentTask: 0, responses: [], scores: [],
+      passageVisible: true, isRecording: false,
+      transcript: '', interimTranscript: '',
+      recognition: state.recognition,
+      speechSupported: state.speechSupported,
     };
     document.getElementById('lang-input').value = '';
     document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('focus-comprehension').checked = true;
-    document.getElementById('focus-composition').checked = true;
-    document.getElementById('focus-expression').checked = true;
+    ['focus-comprehension','focus-composition','focus-expression','focus-speaking']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.checked = true; });
     document.getElementById('lang-score-display').style.display = 'none';
     showStep('setup');
   }
 
-  return {
-    selectLevel,
-    startSession,
-    togglePassage,
-    submitResponse,
-    nextTask,
-    restartSession,
-  };
-
+  return { selectLevel, startSession, togglePassage, submitResponse, nextTask, restartSession, toggleRecording };
 })();
 
 // Global bindings
-function selectLevel(l) { LangMode.selectLevel(l); }
-function startLangSession() { LangMode.startSession(); }
-function togglePassage() { LangMode.togglePassage(); }
+function selectLevel(l)       { LangMode.selectLevel(l); }
+function startLangSession()   { LangMode.startSession(); }
+function togglePassage()      { LangMode.togglePassage(); }
 function submitLangResponse() { LangMode.submitResponse(); }
-function nextLangTask() { LangMode.nextTask(); }
+function nextLangTask()       { LangMode.nextTask(); }
 function restartLangSession() { LangMode.restartSession(); }
+function toggleRecording()    { LangMode.toggleRecording(); }

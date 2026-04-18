@@ -421,6 +421,10 @@
                 <input type="checkbox" id="focus-expression" checked />
                 <span>Free Expression</span>
               </label>
+              <label class="focus-option" id="focus-speaking-row">
+                <input type="checkbox" id="focus-speaking" checked />
+                <span>Speaking Task <span class="focus-badge">Chrome/Edge</span></span>
+              </label>
             </div>
           </div>
         </div>
@@ -452,15 +456,34 @@
           <p class="lang-prompt-text" id="lang-prompt-text"></p>
         </div>
 
-        <!-- Response area -->
-        <div class="lang-response-block">
+        <!-- Written response -->
+        <div id="lang-written-block" class="lang-response-block">
           <label class="lang-response-label">Your response — write in <span id="lang-response-lang">the target language</span></label>
           <textarea id="lang-response" class="lang-textarea" placeholder="Write your response here..."></textarea>
           <div class="lang-word-count"><span id="lang-wc">0</span> words</div>
         </div>
 
+        <!-- Speaking response -->
+        <div id="lang-speaking-block" class="lang-speaking-block" style="display:none">
+          <div class="speaking-instructions">
+            Speak in <strong id="speaking-lang-name">the target language</strong>. Press start, then talk. Press stop when done.
+          </div>
+          <div class="recording-controls">
+            <button class="record-btn" id="record-btn" onclick="toggleRecording()">🎙 Start Speaking</button>
+            <div class="recording-indicator" id="recording-indicator" style="display:none">
+              <div class="rec-dot"></div>
+              <span>Recording...</span>
+            </div>
+          </div>
+          <div class="transcript-area">
+            <div class="transcript-label">Transcript (live)</div>
+            <div class="transcript-display" id="transcript-display"></div>
+            <div class="lang-word-count" id="speech-wc">0 words spoken</div>
+          </div>
+        </div>
+
         <button class="primary-btn" onclick="submitLangResponse()">
-          Submit Response
+          Submit
         </button>
       </div>
     </div>
