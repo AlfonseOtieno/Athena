@@ -1,14 +1,12 @@
 // ============================================================
 // gemini.js — Athena's AI interface
 // Primary: gemini-1.5-flash (generous free tier)
-// Fallback chain: 2.0-flash → 1.5-flash-latest → 1.0-pro
+// Fallback: gemini-1.5-flash-8b (lightest, highest quota)
 // ============================================================
 
 const GEMINI_MODELS = [
   'gemini-1.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash-latest',
-  'gemini-1.0-pro'
+  'gemini-1.5-flash-8b',
 ];
 
 // HTTP status codes that warrant trying the next model
@@ -44,15 +42,15 @@ async function callGemini(prompt, systemInstruction = '', modelIndex = 0) {
     const canRetry = RETRY_ON.has(res.status) && modelIndex < GEMINI_MODELS.length - 1;
 
     if (canRetry) {
-      console.warn(`Model ${model} returned ${res.status}, trying ${GEMINI_MODELS[modelIndex + 1]}...`);
+      console.warn(`Model ${model} returned ${res.status}, falling back to ${GEMINI_MODELS[modelIndex + 1]}...`);
       return callGemini(prompt, systemInstruction, modelIndex + 1);
     }
 
     if (res.status === 429) {
-      throw new Error('API quota exceeded on all available models. Please check your Gemini API key at aistudio.google.com or wait a moment and try again.');
+      throw new Error('API quota exceeded. Your free tier limit has been reached — wait a few minutes and try again, or upgrade your Gemini API plan at aistudio.google.com.');
     }
-    if (res.status === 400) {
-      throw new Error('Invalid API key. Please re-enter your Gemini API key.');
+    if (res.status === 400 || res.status === 403) {
+      throw new Error('Invalid or unauthorized API key. Please re-enter your Gemini API key.');
     }
 
     throw new Error(err?.error?.message || `Gemini API error: ${res.status}`);
