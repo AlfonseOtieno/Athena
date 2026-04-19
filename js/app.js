@@ -15,6 +15,13 @@ Be precise, direct, and honest. Identify exactly what is missing and why it matt
 Don't soften criticism. Acknowledge what is genuinely good.
 Every response must be valid JSON with no markdown fences or preamble.`;
 
+const SYSTEM_DEPTH_MODE = `You are Athena's Depth Engine — a ruthlessly honest evaluator of content quality.
+Your purpose is to expose the gap between feeling informed and being informed.
+You distinguish signal (content that teaches mechanisms, first principles, evidence-backed reasoning) from noise (content that signals knowledge without building it).
+You evaluate whether content delivers what it promised, how deep it goes relative to its format, the credibility signals it shows, and whether it is useful for the learner at their current stage.
+Never inflate scores. Be precise, specific, and direct.
+Every response must be valid JSON with no markdown fences or preamble.`;
+
 const SYSTEM_LANG_MODE = `You are Athena, a language learning AI grounded in Swain's Output Hypothesis and modern neurolinguistic research.
 Your purpose is to make learners PRODUCE language, not just recognise it.
 Never give grammar drills, fill-in-the-blanks, or multiple choice vocabulary tests.
@@ -51,10 +58,12 @@ function enterMode(mode) {
 function launchMode(mode) {
   if (mode === 'pdf') {
     showScreen('screen-pdf');
-    // Reset to upload step
     document.querySelectorAll('.pdf-step').forEach(s => s.classList.remove('active'));
     document.getElementById('pdf-step-upload').classList.add('active');
     document.getElementById('pdf-score-display').style.display = 'none';
+  } else if (mode === 'depth') {
+    showScreen('screen-depth');
+    DepthMode.reset();
   } else if (mode === 'lang') {
     showScreen('screen-lang');
     document.querySelectorAll('.lang-step').forEach(s => s.classList.remove('active'));
@@ -174,7 +183,6 @@ function initConstellation() {
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
-    // Draw connections
     for (let i = 0; i < stars.length; i++) {
       for (let j = i + 1; j < stars.length; j++) {
         const dx = stars[i].x - stars[j].x;
@@ -191,7 +199,6 @@ function initConstellation() {
       }
     }
 
-    // Draw stars
     stars.forEach(s => {
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -213,7 +220,6 @@ function initConstellation() {
   resize();
   draw();
 
-  // Pause when not on home screen
   const observer = new MutationObserver(() => {
     const home = document.getElementById('screen-home');
     if (home && home.classList.contains('active')) {
@@ -228,7 +234,7 @@ function initConstellation() {
   });
 }
 
-// ─── API Key: Enter key support ───────────────────────────────
+// ─── DOM ready ────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('apikey-input').addEventListener('keydown', e => {
@@ -240,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initConstellation();
 });
 
-// ─── Tab key support in code editor ──────────────────────────
+// ─── Tab key in code editor ───────────────────────────────────
 
 document.addEventListener('keydown', e => {
   if (e.target.classList.contains('code-editor') && e.key === 'Tab') {
@@ -252,5 +258,3 @@ document.addEventListener('keydown', e => {
     updatePreview();
   }
 });
-
-// Editor view modes replaced by panel-manager.js
