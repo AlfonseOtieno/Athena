@@ -253,27 +253,4 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ─── Editor View Modes ────────────────────────────────────────
-
-function setEditorView(mode) {
-  const layout = document.getElementById('editor-layout');
-  if (!layout) return;
-
-  // Remove all view classes
-  layout.classList.remove('view-split', 'view-editor', 'view-preview');
-
-  // Apply chosen mode
-  if (mode !== 'default') {
-    layout.classList.add(`view-${mode}`);
-  }
-
-  // Update toolbar button states
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.id === `view-${mode}`);
-  });
-
-  // Refresh preview in case iframe needs repaint
-  if (mode === 'preview' || mode === 'split') {
-    setTimeout(() => updatePreview(), 50);
-  }
-}
+// Editor view modes replaced by panel-manager.js

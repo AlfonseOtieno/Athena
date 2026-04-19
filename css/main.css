@@ -1988,3 +1988,265 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* ============================================================
+   WINDOWS-STYLE PANEL SYSTEM — Coding Mode
+   ============================================================ */
+
+/* Workspace: the desktop area holding all panels */
+.workspace {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 64px); /* subtract mode-header */
+  background: #08080f;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Panel: a draggable, resizable window */
+.panel {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transition: box-shadow 0.15s ease;
+  min-height: 60px;
+}
+
+.panel:focus-within,
+.panel:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.15);
+}
+
+/* Titlebar */
+.panel-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.6rem;
+  height: 36px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.panel-titlebar:active { cursor: grabbing; }
+
+.panel-controls {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.panel-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s;
+  flex-shrink: 0;
+}
+
+.panel-btn:hover { filter: brightness(1.3); font-size: 7px; color: rgba(0,0,0,0.7); }
+
+.close-btn { background: #ff5f57; }
+.min-btn   { background: #febc2e; }
+.max-btn   { background: #28c840; }
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.panel-spacer { flex: 1; }
+
+/* Tabs inside titlebar */
+.panel-tabs-inline {
+  display: flex;
+  gap: 0;
+  margin-left: 0.5rem;
+}
+
+.panel-tabs-inline .tab-btn {
+  padding: 0.2rem 0.7rem;
+  font-size: 0.7rem;
+  border-bottom: none;
+  border-top: none;
+  border-left: none;
+  border-right: 1px solid var(--border);
+}
+
+.panel-tabs-inline .tab-btn:last-child { border-right: none; }
+.panel-tabs-inline .tab-btn.active { color: var(--gold); border-bottom-color: transparent; }
+
+/* Panel body */
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1.2rem 1.4rem;
+  font-size: 0.93rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.panel-body-editor {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-body-editor .code-editor {
+  flex: 1;
+  height: 100%;
+  border-radius: 0;
+}
+
+.panel-body-preview {
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel-body-preview .preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+/* Panel footer (evaluate button) */
+.panel-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+}
+
+.panel-footer .primary-btn {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* Maximized panel */
+.panel-maximized {
+  border-radius: 0 !important;
+  z-index: 999 !important;
+}
+
+/* Resize handle at bottom */
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 10;
+  background: transparent;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.resize-handle:hover {
+  background: rgba(201,168,76,0.2);
+}
+
+/* Taskbar: restore minimized panels */
+.workspace-taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(10,10,15,0.96);
+  border-top: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.8rem;
+  z-index: 1000;
+}
+
+.taskbar-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.8rem;
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.taskbar-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ── MOBILE: stack panels vertically, no absolute positioning ── */
+@media (max-width: 768px) {
+  .workspace {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .panel {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    border-radius: var(--radius) !important;
+    margin-bottom: 0.5rem;
+    box-shadow: none;
+  }
+
+  .panel-maximized {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9999 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  .panel-body-editor {
+    min-height: 280px;
+  }
+
+  .panel-body-preview {
+    min-height: 240px;
+  }
+
+  .panel-body-preview .preview-frame {
+    min-height: 240px;
+  }
+
+  .panel-titlebar { cursor: default; }
+
+  .workspace-taskbar {
+    position: sticky;
+    bottom: 0;
+  }
+
+  .resize-handle { display: none; }
+}

@@ -123,6 +123,7 @@ Include 3-6 groups, 3-8 items per group.`;
       hideLoading();
       renderProject();
       showStep('editor');
+      if (typeof PanelManager !== 'undefined') PanelManager.resetPanels();
     } catch (err) {
       hideLoading();
       btn.textContent = 'Generate My Project';

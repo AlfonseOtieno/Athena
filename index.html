@@ -266,62 +266,72 @@
       </div>
     </div>
 
-    <!-- Step 3: Project + Editor -->
+    <!-- Step 3: Project + Editor (Windows-style panel system) -->
     <div id="coding-step-editor" class="coding-step">
+      <div class="workspace" id="workspace">
 
-      <!-- View mode toolbar -->
-      <div class="editor-toolbar">
-        <span class="editor-toolbar-label">View</span>
-        <div class="view-btns">
-          <button class="view-btn active" id="view-default" onclick="setEditorView('default')" title="Default — all panels">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="5" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="16" y="2" width="2" height="16" rx="1" fill="currentColor" opacity="0.3"/></svg>
-            All
-          </button>
-          <button class="view-btn" id="view-split" onclick="setEditorView('split')" title="Split — editor + preview only">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
-            Split
-          </button>
-          <button class="view-btn" id="view-editor" onclick="setEditorView('editor')" title="Editor fullscreen">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M6 7l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Code
-          </button>
-          <button class="view-btn" id="view-preview" onclick="setEditorView('preview')" title="Preview fullscreen">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
-            Preview
-          </button>
-        </div>
-      </div>
-
-      <div class="editor-layout" id="editor-layout">
-        <div class="project-brief" id="project-brief">
-          <h3>Your Project</h3>
-          <div id="project-description"></div>
-          <div id="project-requirements"></div>
-        </div>
-
-        <div class="editor-section" id="editor-section">
-          <div class="editor-tabs" id="editor-tabs">
-            <button class="tab-btn active" data-tab="html" onclick="switchTab('html')">HTML</button>
-            <button class="tab-btn" data-tab="css" onclick="switchTab('css')" id="css-tab" style="display:none">CSS</button>
-            <button class="tab-btn" data-tab="js" onclick="switchTab('js')" id="js-tab" style="display:none">JS</button>
+        <!-- Panel: Project Brief -->
+        <div class="panel" id="panel-brief" data-panel="brief">
+          <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-brief')">
+            <div class="panel-controls">
+              <button class="panel-btn close-btn" onclick="closePanel('panel-brief')" title="Close">✕</button>
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-brief')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-brief')" title="Maximize">□</button>
+            </div>
+            <span class="panel-title">Project Brief</span>
+            <div class="panel-spacer"></div>
           </div>
-          <div class="editor-wrapper">
+          <div class="panel-body">
+            <div id="project-description"></div>
+            <div id="project-requirements"></div>
+          </div>
+        </div>
+
+        <!-- Panel: Code Editor -->
+        <div class="panel" id="panel-editor" data-panel="editor">
+          <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-editor')">
+            <div class="panel-controls">
+              <button class="panel-btn close-btn" onclick="closePanel('panel-editor')" title="Close">✕</button>
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-editor')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-editor')" title="Maximize">□</button>
+            </div>
+            <span class="panel-title">Code Editor</span>
+            <div class="panel-tabs-inline">
+              <button class="tab-btn active" data-tab="html" onclick="switchTab('html')">HTML</button>
+              <button class="tab-btn" data-tab="css" onclick="switchTab('css')" id="css-tab" style="display:none">CSS</button>
+              <button class="tab-btn" data-tab="js" onclick="switchTab('js')" id="js-tab" style="display:none">JS</button>
+            </div>
+          </div>
+          <div class="panel-body panel-body-editor">
             <textarea id="editor-html" class="code-editor" placeholder="Write your HTML here..." spellcheck="false" oninput="updatePreview()"></textarea>
             <textarea id="editor-css" class="code-editor" placeholder="Write your CSS here..." spellcheck="false" style="display:none" oninput="updatePreview()"></textarea>
-            <textarea id="editor-js" class="code-editor" placeholder="Write your JavaScript here..." spellcheck="false" style="display:none" oninput="updatePreview()"></textarea>
+            <textarea id="editor-js"  class="code-editor" placeholder="Write your JavaScript here..." spellcheck="false" style="display:none" oninput="updatePreview()"></textarea>
           </div>
-          <button class="primary-btn evaluate-btn" onclick="evaluateCode()">
-            <span id="eval-btn-text">Evaluate My Code</span>
-          </button>
+          <div class="panel-footer">
+            <button class="primary-btn evaluate-btn" onclick="evaluateCode()">
+              <span id="eval-btn-text">Evaluate My Code</span>
+            </button>
+          </div>
         </div>
 
-        <div class="preview-section" id="preview-section">
-          <div class="preview-header">
-            <span>Preview</span>
+        <!-- Panel: Preview -->
+        <div class="panel" id="panel-preview" data-panel="preview">
+          <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-preview')">
+            <div class="panel-controls">
+              <button class="panel-btn close-btn" onclick="closePanel('panel-preview')" title="Close">✕</button>
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-preview')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-preview')" title="Maximize">□</button>
+            </div>
+            <span class="panel-title">Live Preview</span>
             <button class="refresh-btn" onclick="updatePreview()">↺</button>
           </div>
-          <iframe id="preview-frame" class="preview-frame"></iframe>
+          <div class="panel-body panel-body-preview">
+            <iframe id="preview-frame" class="preview-frame"></iframe>
+          </div>
         </div>
+
+        <!-- Taskbar: restore minimized panels -->
+        <div class="workspace-taskbar" id="workspace-taskbar"></div>
       </div>
     </div>
 
@@ -542,6 +552,7 @@
   <script src="js/pdf-mode.js"></script>
   <script src="js/lang-mode.js"></script>
   <script src="js/coding-mode.js"></script>
+  <script src="js/panel-manager.js"></script>
   <script src="js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
