@@ -50,7 +50,7 @@
         </p>
       </div>
 
-      <div class="mode-cards mode-cards-4">
+      <div class="mode-cards mode-cards-3">
         <div class="mode-card" id="card-pdf" onclick="enterMode('pdf')">
           <div class="card-glyph">𝛙</div>
           <div class="card-body">
@@ -95,21 +95,7 @@
           </div>
           <div class="card-cta">Begin →</div>
         </div>
-
-        <div class="mode-card mode-card-depth" id="card-depth" onclick="enterMode('depth')">
-          <div class="card-glyph">⊗</div>
-          <div class="card-body">
-            <h2>Depth Mode</h2>
-            <p>Paste an article, transcript, or your notes from a video. Athena scores whether the source taught you anything real — then tests if you actually absorbed it.</p>
-            <ul class="card-features">
-              <li>Signal vs. noise content scoring</li>
-              <li>First-principles gap analysis</li>
-              <li>Adversarial comprehension questions</li>
-              <li>Illusion of competence detection</li>
-            </ul>
-          </div>
-          <div class="card-cta">Begin →</div>
-        </div>
+</div>
       </div>
 
       <p class="home-footer-note">
@@ -559,177 +545,12 @@
       </div>
     </div>
   </div>
-
-
-  <!-- SCREEN: DEPTH MODE -->
-  <div id="screen-depth" class="screen">
-    <div class="mode-header">
-      <button class="back-btn" onclick="goHome()">← Home</button>
-      <div class="mode-title-row">
-        <span class="mode-badge depth-badge">Depth Mode</span>
-      </div>
-    </div>
-
-    <!-- Step 1: Input -->
-    <div id="depth-step-input" class="depth-step active">
-      <div class="step-container">
-        <h2 class="step-title">What are you evaluating?</h2>
-        <p class="step-sub">Paste the content you want Athena to assess. She will tell you whether it's worth your time, what it actually delivers versus what it claimed, and where to go for real depth.</p>
-
-        <div class="depth-form">
-
-          <div class="setup-field">
-            <label class="setup-label">Source type</label>
-            <div class="source-type-row">
-              <button class="source-btn active" data-type="article" onclick="selectSourceType('article')">Article</button>
-              <button class="source-btn" data-type="video" onclick="selectSourceType('video')">Video transcript</button>
-              <button class="source-btn" data-type="podcast" onclick="selectSourceType('podcast')">Podcast</button>
-              <button class="source-btn" data-type="book" onclick="selectSourceType('book')">Book excerpt</button>
-              <button class="source-btn" data-type="notes" onclick="selectSourceType('notes')">My notes</button>
-            </div>
-            <div class="depth-source-hint" id="depth-source-hint">
-              Paste the article text. For paywalled content, use reader view and copy. Include the headline.
-            </div>
-          </div>
-
-          <div class="depth-form-row">
-            <div class="setup-field" style="flex:1">
-              <label class="setup-label">Format / length</label>
-              <select id="depth-format" class="depth-select">
-                <option value="short-video">10-min video</option>
-                <option value="long-video">30–60 min video</option>
-                <option value="short-article">Short article</option>
-                <option value="long-article">Long-form article / essay</option>
-                <option value="podcast">Podcast episode</option>
-                <option value="book-chapter">Book chapter</option>
-                <option value="book">Full book</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="setup-field" style="flex:1">
-              <label class="setup-label">Your prior knowledge</label>
-              <select id="depth-level" class="depth-select">
-                <option value="beginner">New to this topic</option>
-                <option value="some-knowledge">Some exposure</option>
-                <option value="familiar">Fairly familiar</option>
-                <option value="advanced">Already deep in it</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="setup-field">
-            <label class="setup-label">Topic <span class="optional-label">(optional — helps calibrate)</span></label>
-            <input type="text" id="depth-topic" class="topic-input" placeholder="e.g. Game Theory, Roman Empire, Neuroplasticity, Sleep science..." />
-          </div>
-
-          <div class="setup-field">
-            <label class="setup-label">Content</label>
-            <textarea id="depth-content" class="notes-textarea depth-textarea" placeholder="Paste the full content here — title, introduction, body text..."></textarea>
-          </div>
-
-        </div>
-
-        <button class="primary-btn" onclick="startDepthSession()">Evaluate This Content</button>
-      </div>
-    </div>
-
-    <!-- Step 2: Result -->
-    <div id="depth-step-result" class="depth-step">
-      <div class="step-container depth-result-container">
-
-        <!-- Verdict banner -->
-        <div class="depth-verdict-banner" id="depth-verdict-banner">
-          <div class="depth-verdict-top">
-            <span class="depth-verdict-label" id="depth-verdict-label">—</span>
-            <div class="depth-author-row">
-              <span class="author-type-badge" id="depth-author-pattern">—</span>
-              <span class="depth-author-explanation" id="depth-author-explanation"></span>
-            </div>
-          </div>
-          <p class="depth-verdict-reasoning" id="depth-verdict-reasoning"></p>
-        </div>
-
-        <!-- Four axes -->
-        <div class="depth-axes">
-
-          <div class="depth-axis" id="axis-claim">
-            <div class="axis-header">
-              <span class="axis-label">Claim vs Delivery</span>
-              <span class="axis-score">—</span>
-            </div>
-            <div class="axis-bar"><div class="axis-fill"></div></div>
-            <div class="axis-claim"></div>
-            <div class="axis-note"></div>
-          </div>
-
-          <div class="depth-axis" id="axis-depth">
-            <div class="axis-header">
-              <span class="axis-label">Depth for Format</span>
-              <span class="axis-score">—</span>
-            </div>
-            <div class="axis-bar"><div class="axis-fill"></div></div>
-            <div class="axis-claim"></div>
-            <div class="axis-note"></div>
-          </div>
-
-          <div class="depth-axis" id="axis-cred">
-            <div class="axis-header">
-              <span class="axis-label">Credibility Signals</span>
-              <span class="axis-score">—</span>
-            </div>
-            <div class="axis-bar"><div class="axis-fill"></div></div>
-            <div class="axis-claim"></div>
-            <div class="axis-note"></div>
-          </div>
-
-          <div class="depth-axis" id="axis-useful">
-            <div class="axis-header">
-              <span class="axis-label">Useful at Your Stage</span>
-              <span class="axis-score">—</span>
-            </div>
-            <div class="axis-bar"><div class="axis-fill"></div></div>
-            <div class="axis-claim"></div>
-            <div class="axis-note"></div>
-          </div>
-
-        </div>
-
-        <!-- What you get / what's missing -->
-        <div class="depth-takeaway-row">
-          <div class="depth-takeaway depth-takeaway-get">
-            <div class="takeaway-label">✓ What you can take from this</div>
-            <div class="takeaway-text" id="depth-what-you-get"></div>
-          </div>
-          <div class="depth-takeaway depth-takeaway-miss">
-            <div class="takeaway-label">◎ What this doesn't cover</div>
-            <div class="takeaway-text" id="depth-what-missing"></div>
-          </div>
-        </div>
-
-        <!-- Better alternatives -->
-        <div class="depth-alternatives">
-          <div class="depth-alt-header">
-            <span class="setup-label" style="color:var(--gold)">Where to go instead / next</span>
-          </div>
-          <ol class="depth-alt-list" id="depth-alternatives-list"></ol>
-        </div>
-
-        <div class="report-actions">
-          <button class="primary-btn" onclick="DepthMode.reset()">Evaluate Another</button>
-          <button class="secondary-btn" onclick="goHome()">Back to Home</button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="js/pdf-parser.js"></script>
   <script src="js/gemini.js"></script>
   <script src="js/pdf-mode.js"></script>
   <script src="js/lang-mode.js"></script>
-  <script src="js/depth-mode.js"></script>
   <script src="js/coding-mode.js"></script>
   <script src="js/panel-manager.js"></script>
   <script src="js/app.js"></script>

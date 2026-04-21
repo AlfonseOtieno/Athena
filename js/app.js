@@ -15,13 +15,6 @@ Be precise, direct, and honest. Identify exactly what is missing and why it matt
 Don't soften criticism. Acknowledge what is genuinely good.
 Every response must be valid JSON with no markdown fences or preamble.`;
 
-const SYSTEM_DEPTH_MODE = `You are Athena's Depth Engine — a ruthlessly honest evaluator of content quality.
-Your purpose is to expose the gap between feeling informed and being informed.
-You distinguish signal (content that teaches mechanisms, first principles, evidence-backed reasoning) from noise (content that signals knowledge without building it).
-You evaluate whether content delivers what it promised, how deep it goes relative to its format, the credibility signals it shows, and whether it is useful for the learner at their current stage.
-Never inflate scores. Be precise, specific, and direct.
-Every response must be valid JSON with no markdown fences or preamble.`;
-
 const SYSTEM_LANG_MODE = `You are Athena, a language learning AI grounded in Swain's Output Hypothesis and modern neurolinguistic research.
 Your purpose is to make learners PRODUCE language, not just recognise it.
 Never give grammar drills, fill-in-the-blanks, or multiple choice vocabulary tests.
@@ -61,9 +54,6 @@ function launchMode(mode) {
     document.querySelectorAll('.pdf-step').forEach(s => s.classList.remove('active'));
     document.getElementById('pdf-step-upload').classList.add('active');
     document.getElementById('pdf-score-display').style.display = 'none';
-  } else if (mode === 'depth') {
-    showScreen('screen-depth');
-    DepthMode.reset();
   } else if (mode === 'lang') {
     showScreen('screen-lang');
     document.querySelectorAll('.lang-step').forEach(s => s.classList.remove('active'));
