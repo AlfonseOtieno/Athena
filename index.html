@@ -7,7 +7,7 @@
   <meta name="description" content="AI-powered mastery learning through recall, application, and diagnostic feedback." />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a0a0f" />
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/owl-logo.png" type="image/png" />
   <link rel="stylesheet" href="css/main.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,16 +23,7 @@
 
     <header class="home-header">
       <div class="athena-logo">
-        <svg class="owl-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="14" cy="18" r="6" stroke="#c9a84c" stroke-width="1.5"/>
-          <circle cx="26" cy="18" r="6" stroke="#c9a84c" stroke-width="1.5"/>
-          <circle cx="14" cy="18" r="2.5" fill="#c9a84c"/>
-          <circle cx="26" cy="18" r="2.5" fill="#c9a84c"/>
-          <path d="M17 24 Q20 27 23 24" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-          <path d="M8 14 Q10 8 14 10" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-          <path d="M32 14 Q30 8 26 10" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-          <path d="M14 28 Q17 34 20 33 Q23 34 26 28" stroke="#c9a84c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-        </svg>
+        <img src="assets/owl-logo.png" class="owl-icon" alt="Athena owl" />
         <span class="logo-text">ATHENA</span>
       </div>
     </header>
@@ -274,13 +265,13 @@
         <!-- Panel: Project Brief -->
         <div class="panel" id="panel-brief" data-panel="brief">
           <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-brief')">
-            <div class="panel-controls">
-              <button class="panel-btn close-btn" onclick="closePanel('panel-brief')" title="Close">✕</button>
-              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-brief')" title="Minimize">─</button>
-              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-brief')" title="Maximize">□</button>
-            </div>
             <span class="panel-title">Project Brief</span>
             <div class="panel-spacer"></div>
+            <div class="panel-controls">
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-brief')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-brief')" title="Maximize">□</button>
+              <button class="panel-btn close-btn" onclick="closePanel('panel-brief')" title="Close">✕</button>
+            </div>
           </div>
           <div class="panel-body">
             <div id="project-description"></div>
@@ -291,16 +282,17 @@
         <!-- Panel: Code Editor -->
         <div class="panel" id="panel-editor" data-panel="editor">
           <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-editor')">
-            <div class="panel-controls">
-              <button class="panel-btn close-btn" onclick="closePanel('panel-editor')" title="Close">✕</button>
-              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-editor')" title="Minimize">─</button>
-              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-editor')" title="Maximize">□</button>
-            </div>
             <span class="panel-title">Code Editor</span>
             <div class="panel-tabs-inline">
               <button class="tab-btn active" data-tab="html" onclick="switchTab('html')">HTML</button>
               <button class="tab-btn" data-tab="css" onclick="switchTab('css')" id="css-tab" style="display:none">CSS</button>
               <button class="tab-btn" data-tab="js" onclick="switchTab('js')" id="js-tab" style="display:none">JS</button>
+            </div>
+            <div class="panel-spacer"></div>
+            <div class="panel-controls">
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-editor')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-editor')" title="Maximize">□</button>
+              <button class="panel-btn close-btn" onclick="closePanel('panel-editor')" title="Close">✕</button>
             </div>
           </div>
           <div class="panel-body panel-body-editor">
@@ -318,13 +310,14 @@
         <!-- Panel: Preview -->
         <div class="panel" id="panel-preview" data-panel="preview">
           <div class="panel-titlebar" onmousedown="startDrag(event, 'panel-preview')">
-            <div class="panel-controls">
-              <button class="panel-btn close-btn" onclick="closePanel('panel-preview')" title="Close">✕</button>
-              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-preview')" title="Minimize">─</button>
-              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-preview')" title="Maximize">□</button>
-            </div>
             <span class="panel-title">Live Preview</span>
             <button class="refresh-btn" onclick="updatePreview()">↺</button>
+            <div class="panel-spacer"></div>
+            <div class="panel-controls">
+              <button class="panel-btn min-btn"   onclick="minimizePanel('panel-preview')" title="Minimize">─</button>
+              <button class="panel-btn max-btn"   onclick="maximizePanel('panel-preview')" title="Maximize">□</button>
+              <button class="panel-btn close-btn" onclick="closePanel('panel-preview')" title="Close">✕</button>
+            </div>
           </div>
           <div class="panel-body panel-body-preview">
             <iframe id="preview-frame" class="preview-frame"></iframe>

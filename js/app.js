@@ -105,7 +105,7 @@ function showLoading(message = 'Thinking...') {
   loadingEl = document.createElement('div');
   loadingEl.className = 'loading-overlay';
   loadingEl.innerHTML = `
-    <div class="loading-owl">🦉</div>
+    <img src="assets/owl-logo.png" class="loading-owl-img" alt="Athena" />
     <div class="loading-text">${message}</div>
     <div class="loading-dots">
       <div class="loading-dot"></div>
