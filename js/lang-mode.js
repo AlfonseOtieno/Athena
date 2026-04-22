@@ -37,38 +37,58 @@ const LangMode = (() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       state.speechSupported = true;
-      state.recognition = new SR();
-      state.recognition.continuous = true;
-      state.recognition.interimResults = true;
-
-      state.recognition.onresult = (event) => {
-        state.interimTranscript = '';
-        let final = state.transcript;
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript + ' ';
-          } else {
-            state.interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        state.transcript = final;
-        updateTranscriptDisplay();
-      };
-
-      state.recognition.onerror = (e) => {
-        if (e.error !== 'no-speech') {
-          showError('Microphone error: ' + e.error);
-          stopRecording();
-        }
-      };
-
-      state.recognition.onend = () => {
-        if (state.isRecording) {
-          // Restart if still in recording mode (continuous workaround)
-          try { state.recognition.start(); } catch (_) {}
-        }
-      };
+      // Create fresh recognition instance each recording session
+      // to avoid resultIndex confusion across restarts
+      state.SR = SR;
     }
+  }
+
+  function createRecognition() {
+    const rec = new state.SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = state.recognitionLang || 'en-US';
+
+    rec.onresult = (event) => {
+      // Only process results from resultIndex onwards to avoid re-processing
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          // Append finalized text only once
+          state.transcript += event.results[i][0].transcript + ' ';
+          state.interimTranscript = '';
+        } else {
+          // Replace interim (not append — only latest interim matters)
+          state.interimTranscript = event.results[i][0].transcript;
+        }
+      }
+      updateTranscriptDisplay();
+    };
+
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed') {
+        showError('Microphone access denied. Please allow microphone access and try again.');
+        stopRecording();
+      } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        console.warn('Speech recognition error:', e.error);
+      }
+    };
+
+    rec.onend = () => {
+      // Do NOT auto-restart — prevents resultIndex confusion
+      // If user is still recording, they can press stop and start again
+      if (state.isRecording) {
+        state.isRecording = false;
+        const btn = document.getElementById('record-btn');
+        if (btn) {
+          btn.textContent = '🎙 Start Speaking';
+          btn.classList.remove('recording');
+        }
+        const indicator = document.getElementById('recording-indicator');
+        if (indicator) indicator.style.display = 'none';
+      }
+    };
+
+    return rec;
   }
 
   // ─── Step control ─────────────────────────────────────────
@@ -114,10 +134,8 @@ const LangMode = (() => {
     state.responses = [];
     state.scores = [];
 
-    // Set speech recognition language
-    if (state.recognition) {
-      state.recognition.lang = getLangCode(lang);
-    }
+    // Store recognition language for use when creating fresh instances
+    state.recognitionLang = getLangCode(lang);
 
     showLoading('Athena is preparing your session...');
 
@@ -262,22 +280,32 @@ Respond ONLY with a valid JSON array (no fences):
   }
 
   function startRecording() {
-    if (!state.recognition) return;
+    if (!state.SR) return;
+    // Always create a fresh instance — avoids resultIndex drift across sessions
     state.transcript = '';
     state.interimTranscript = '';
     state.isRecording = true;
+    state.recognition = createRecognition();
     try {
       state.recognition.start();
-    } catch (_) {}
+    } catch (e) {
+      showError('Could not start microphone: ' + e.message);
+      state.isRecording = false;
+      return;
+    }
     const btn = document.getElementById('record-btn');
-    btn.textContent = '⏹ Stop Speaking';
-    btn.classList.add('recording');
+    if (btn) {
+      btn.textContent = '⏹ Stop Speaking';
+      btn.classList.add('recording');
+    }
     document.getElementById('recording-indicator').style.display = 'flex';
   }
 
   function stopRecording() {
     state.isRecording = false;
-    try { state.recognition.stop(); } catch (_) {}
+    if (state.recognition) {
+      try { state.recognition.stop(); } catch (_) {}
+    }
     const btn = document.getElementById('record-btn');
     if (btn) {
       btn.textContent = '🎙 Start Speaking';
@@ -560,13 +588,17 @@ Respond ONLY with JSON (no fences):
 
   function restartSession() {
     stopRecording();
+    const savedSR = state.SR;
+    const savedSupported = state.speechSupported;
     state = {
       language: '', level: '', focus: [], tasks: [],
       currentTask: 0, responses: [], scores: [],
       passageVisible: true, isRecording: false,
       transcript: '', interimTranscript: '',
-      recognition: state.recognition,
-      speechSupported: state.speechSupported,
+      recognition: null,
+      SR: savedSR,
+      speechSupported: savedSupported,
+      recognitionLang: '',
     };
     document.getElementById('lang-input').value = '';
     document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));

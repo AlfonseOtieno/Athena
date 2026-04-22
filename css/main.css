@@ -65,6 +65,8 @@ body {
 #screen-home {
   display: none;
   flex-direction: column;
+  position: relative;
+  min-height: 100vh;
 }
 #screen-home.active { display: flex; }
 
@@ -155,7 +157,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 3rem 1.5rem 2rem;
+  padding: 3rem 1.5rem 4.5rem;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -1338,28 +1340,35 @@ body {
    BUILT BY FOOTER
    ============================================================ */
 
-.built-by {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.82rem;
-  color: var(--text-faint);
+/* Built-by: fixed to bottom of home screen, always visible */
+.built-by-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.7rem 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
   justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  background: rgba(10,10,15,0.7);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(201,168,76,0.08);
+  z-index: 20;
 }
 
-.built-by a {
+.built-by-footer a {
   color: var(--gold);
   text-decoration: none;
   font-family: var(--font-display);
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   transition: color var(--transition);
 }
 
-.built-by a:hover {
+.built-by-footer a:hover {
   color: var(--gold-light);
   text-decoration: underline;
 }
@@ -2054,31 +2063,31 @@ body {
 }
 
 .panel-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
   cursor: pointer;
-  font-size: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
   flex-shrink: 0;
-  opacity: 0.85;
+  color: var(--text-faint);
 }
 
 .panel-btn:hover {
-  opacity: 1;
-  filter: brightness(1.15);
-  font-size: 9px;
-  color: rgba(0,0,0,0.8);
-  font-weight: 700;
+  border-color: var(--border-strong);
+  color: var(--marble);
+  background: var(--surface-2);
 }
 
-.close-btn { background: #ff5f57; }
-.min-btn   { background: #febc2e; }
-.max-btn   { background: #28c840; }
+.panel-btn svg { display: block; pointer-events: none; }
+
+.close-btn:hover { border-color: #ff5f57; color: #ff5f57; }
+.min-btn:hover   { border-color: #febc2e; color: #febc2e; }
+.max-btn:hover   { border-color: #28c840; color: #28c840; }
 
 .panel-title {
   font-family: var(--font-display);
