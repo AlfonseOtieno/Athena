@@ -65,8 +65,6 @@ body {
 #screen-home {
   display: none;
   flex-direction: column;
-  position: relative;
-  min-height: 100vh;
 }
 #screen-home.active { display: flex; }
 
@@ -157,7 +155,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 3rem 1.5rem 4.5rem;
+  padding: 3rem 1.5rem 2rem;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -1340,38 +1338,7 @@ body {
    BUILT BY FOOTER
    ============================================================ */
 
-/* Built-by: fixed to bottom of home screen, always visible */
-.built-by-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.7rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: var(--text-faint);
-  background: rgba(10,10,15,0.7);
-  backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(201,168,76,0.08);
-  z-index: 20;
-}
 
-.built-by-footer a {
-  color: var(--gold);
-  text-decoration: none;
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  transition: color var(--transition);
-}
-
-.built-by-footer a:hover {
-  color: var(--gold-light);
-  text-decoration: underline;
-}
 
 /* ============================================================
    EDITOR VIEW TOOLBAR
@@ -2273,4 +2240,32 @@ body {
   }
 
   .resize-handle { display: none; }
+}
+
+/* Built by — last element in home-main, normal document flow */
+.built-by {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.built-by a {
+  color: var(--gold);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  transition: color var(--transition);
+}
+
+.built-by a:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
 }
